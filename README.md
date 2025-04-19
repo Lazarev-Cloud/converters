@@ -23,7 +23,7 @@ A comprehensive collection of simple and efficient file format converters implem
 
 1. Clone this repository:
    ```
-   git clone https://github.com/Lazarev-Cloud/converters/file-converters.git
+   git clone https://github.com/Lazarev-Cloud/converters.git
    cd file-converters
    ```
 
