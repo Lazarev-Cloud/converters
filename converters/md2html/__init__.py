@@ -59,7 +59,7 @@ MARKDOWN_EXTENSIONS: Sequence[str] = (
 )
 
 
-@dataclass(slots=True)
+@dataclass
 class _HtmlContext:
     """Execution context shared between Markdown conversions."""
 

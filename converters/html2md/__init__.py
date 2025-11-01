@@ -1,7 +1,7 @@
 """HTML → Markdown converter."""
 from __future__ import annotations
 
-from importlib import import_module
+import importlib
 from pathlib import Path
 from typing import Callable, Sequence, cast
 
@@ -15,7 +15,7 @@ def _load_markdownify() -> Callable[..., str]:
     """Import markdownify lazily to keep the dependency optional."""
 
     try:
-        module = import_module("markdownify")
+        module = importlib.import_module("markdownify")
     except ImportError as exc:  # pragma: no cover - import failure handled at runtime
         raise RuntimeError(
             "markdownify is required for html2md. Install it with 'pip install markdownify'."

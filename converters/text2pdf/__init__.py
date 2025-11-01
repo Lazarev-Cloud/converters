@@ -14,7 +14,7 @@ DEFAULT_PAGE_SIZE: Tuple[float, float] = (595.2755905511812, 841.8897637795277) 
 POINTS_PER_INCH = 72.0
 
 
-@dataclass(slots=True)
+@dataclass
 class TextToPdfLayout:
     """Layout options for :func:`convert_text_to_pdf`."""
 
@@ -25,7 +25,7 @@ class TextToPdfLayout:
     page_size: Tuple[float, float] = DEFAULT_PAGE_SIZE
 
 
-@dataclass(slots=True)
+@dataclass
 class _PdfContext:
     """Execution context shared across conversions."""
 
