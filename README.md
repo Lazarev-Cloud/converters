@@ -1,117 +1,95 @@
 # File Converters Collection
 
-A comprehensive collection of simple and efficient file format converters implemented in Python. This project provides easy-to-use tools for converting between various file formats.
+A curated set of Python utilities for converting between common file formats. The
+project focuses on reliability, helpful command line output and clean, reusable
+APIs for automation scripts.
 
-## Features
+## Key features
 
-- **Modular Design**: Each converter is self-contained and can be used independently
-- **Simple CLI**: Unified command-line interface for all converters
-- **Batch Processing**: Convert multiple files at once
-- **Detailed Output**: Statistics and progress information during conversion
-- **Customizable Options**: Quality settings, themes, and other format-specific options
-
-## Available Converters
-
-| Converter | Description | Input Formats | Output Format |
-|-----------|-------------|---------------|--------------|
-| img2webp | Convert images to WebP format | JPG, PNG, GIF, BMP, TIFF, etc. | WebP |
-| text2pdf | Convert text files to PDF documents | TXT, MD, etc. | PDF |
-| md2html | Convert Markdown to HTML with themes | MD, Markdown | HTML |
-| csv2json | Convert CSV files to JSON format | CSV | JSON |
+- **Unified CLI** &mdash; one entry point that exposes every converter with
+  dedicated options.
+- **Reusable Python API** &mdash; each converter returns a structured
+  `ConversionResult` describing what happened.
+- **Batch-friendly** &mdash; point the CLI at any folder and the appropriate
+  output directory is created automatically.
+- **Extensible** &mdash; it is straightforward to add new converters or adjust
+  existing ones thanks to the shared utility layer.
 
 ## Installation
 
-1. Clone this repository:
-   ```
-   git clone https://github.com/Lazarev-Cloud/converters.git
-   cd file-converters
-   ```
-
-2. Install the requirements:
-   ```
-   pip install -r requirements.txt
-   ```
-
-## Usage
-
-### Command Line Interface
-
-Use the included CLI tool to access all converters:
+The package targets Python 3.9 and newer. Install the runtime dependencies and
+(optional) the command line entry point in editable mode:
 
 ```bash
-# List all available converters
-python cli.py --list
-
-# Convert all images in a folder to WebP
-python cli.py img2webp /path/to/images --quality 85
-
-# Convert all text files to PDF
-python cli.py text2pdf /path/to/textfiles
-
-# Convert Markdown files to HTML
-python cli.py md2html /path/to/markdown --theme github
-
-# Convert CSV files to JSON
-python cli.py csv2json /path/to/csvfiles --pretty
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install -e .
 ```
 
-### Using Converters Directly
+## Command line usage
 
-Each converter can also be used as a standalone module:
+List all available converters:
+
+```bash
+file-converters --list
+```
+
+Run one of the converters (the CLI names match the directory names inside the
+`converters/` package):
+
+```bash
+# Convert every Markdown document in the folder to HTML
+file-converters md2html docs/content --theme github
+
+# Transcode images to WebP while keeping existing results intact
+file-converters img2webp assets/images --quality 85
+```
+
+Every command prints a short summary that includes the output directory and
+counts of converted, skipped and failed files.
+
+### Exposed converters
+
+| Name      | Description | Key options |
+|-----------|-------------|-------------|
+| `img2webp` | Convert bitmap images (PNG, JPG, GIF, BMP, TIFF, etc.) to WebP | `--quality`, `--lossless`, `--overwrite`, `--output-folder` |
+| `csv2json` | Transform CSV spreadsheets into JSON documents | `--encoding`, `--no-pretty`, `--output-folder` |
+| `md2html`  | Render Markdown documents as styled HTML pages | `--theme`, `--extra-css`, `--output-folder` |
+| `text2pdf` | Typeset plain text files into PDF documents | `--font-name`, `--font-path`, `--font-size`, `--margin`, `--output-folder` |
+
+Refer to the [documentation](docs/index.md) for in-depth explanations and
+workflow tips for each converter.
+
+## Programmatic usage
+
+All conversion functions can be imported and executed directly. Each function
+returns a `ConversionResult` with detailed information that can be inspected or
+serialised to JSON.
 
 ```python
-from converters.img2webp.main import convert_images_to_webp
+from pathlib import Path
 
-# Convert all images in a folder to WebP
-convert_images_to_webp('/path/to/images', quality=85)
+from converters import convert_markdown_to_html
+
+result = convert_markdown_to_html(Path("./notes"), theme="github")
+
+print("Converted", result.total_converted, "files")
+print("Errors:", result.errors)
 ```
-
-## Converter-Specific Options
-
-### img2webp
-- `quality`: WebP quality (0-100), lower means smaller file size (default: 80)
-
-### text2pdf
-- `font_name`: Name of the font to use (default: "Courier")
-- `font_size`: Font size in points (default: 12)
-- `margin`: Margin in inches (default: 0.5)
-
-### md2html
-- `theme`: CSS theme to apply (options: "default", "github", "dark")
-
-### csv2json
-- `pretty_print`: Whether to format the JSON with indentation (default: True)
-- `encoding`: Encoding to use when reading CSV files (default: 'utf-8')
-
-## Requirements
-
-- Python 3.7+
-- Pillow (for image processing)
-- ReportLab (for PDF generation)
-- Markdown (for Markdown processing)
-- BeautifulSoup4 (for HTML formatting)
-
-See `requirements.txt` for complete dependencies.
-
-## Adding New Converters
-
-To add a new converter:
-
-1. Create a new directory in the `converters` folder
-2. Add a `main.py` file with a function named `convert_X_to_Y`
-3. Add a `README.md` with converter-specific documentation
-4. Update the main `requirements.txt` if needed
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Issues and pull requests are welcome! If you plan a larger contribution please
+open an issue first so we can discuss the approach.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-converter`)
-3. Commit your changes (`git commit -m 'Add some amazing converter'`)
-4. Push to the branch (`git push origin feature/amazing-converter`)
-5. Open a Pull Request
+1. Fork the repository and create a feature branch.
+2. Install the project in editable mode (`pip install -e .`).
+3. Add or update tests/documentation alongside your changes.
+4. Run the test suite before submitting (`pytest`).
+
+## License
+
+This project is released under the MIT License. See the `LICENSE` file for
+further details.

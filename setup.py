@@ -8,13 +8,13 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="file-converters",
-    version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
-    description="A collection of file format converters",
+    version="0.2.0",
+    author="File Converters Maintainers",
+    author_email="opensource@example.com",
+    description="A collection of polished file format converters",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Lazarev-Cloud/converters/file-converters",
+    url="https://github.com/Lazarev-Cloud/converters",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -25,7 +25,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "file-converters=cli:main",
+            "file-converters=converters.cli:main",
         ],
     },
 )
