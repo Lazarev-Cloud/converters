@@ -7,6 +7,7 @@ and notes on the Python API.
 - [CSV to JSON](converters/csv2json.md)
 - [Images to WebP](converters/img2webp.md)
 - [Markdown to HTML](converters/md2html.md)
+- [HTML to Markdown](converters/html2md.md)
 - [Text to PDF](converters/text2pdf.md)
 
 ## Shared concepts

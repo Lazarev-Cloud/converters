@@ -1,11 +1,9 @@
 """Markdown → HTML converter."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
-
-import markdown
-from bs4 import BeautifulSoup
 
 from ..utils import ConversionResult, ensure_directory, find_source_files, normalise_source
 
@@ -51,6 +49,108 @@ _THEME_STYLES: Mapping[str, str] = {
     """,
 }
 
+MARKDOWN_EXTENSIONS: Sequence[str] = (
+    "fenced_code",
+    "tables",
+    "codehilite",
+    "toc",
+    "sane_lists",
+    "smarty",
+)
+
+
+@dataclass(slots=True)
+class _HtmlContext:
+    """Execution context shared between Markdown conversions."""
+
+    css: str
+    markdown_module: object
+    soup_factory: object
+    output_dir: Path
+
+
+def _load_dependencies() -> tuple[object, object]:
+    """Import Markdown and BeautifulSoup on demand."""
+
+    try:
+        import markdown  # type: ignore import  # pylint: disable=import-outside-toplevel
+        from bs4 import BeautifulSoup  # type: ignore import  # pylint: disable=import-outside-toplevel
+    except ImportError as exc:  # pragma: no cover - import failure handled at runtime
+        raise RuntimeError(
+            "markdown and beautifulsoup4 are required for md2html. "
+            "Install them via 'pip install markdown beautifulsoup4'."
+        ) from exc
+    return markdown, BeautifulSoup
+
+
+def _render_document(
+    md_path: Path,
+    css: str,
+    markdown_module: object,
+    soup_factory: object,
+) -> str:
+    """Read ``md_path`` and return prettified HTML with embedded ``css``."""
+
+    markdown = markdown_module  # type: ignore[assignment]
+    soup_cls = soup_factory  # type: ignore[assignment]
+
+    text = md_path.read_text(encoding="utf-8")
+    html = markdown.markdown(  # type: ignore[attr-defined]
+        text,
+        extensions=list(MARKDOWN_EXTENSIONS),
+    )
+    document = (
+        "<!DOCTYPE html>\n"
+        "<html lang=\"en\">\n"
+        "<head>\n"
+        "    <meta charset=\"utf-8\">\n"
+        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+        f"    <title>{md_path.stem}</title>\n"
+        "    <style>\n"
+        f"{css}\n"
+        "    </style>\n"
+        "</head>\n"
+        "<body>\n"
+        f"{html}\n"
+        "</body>\n"
+        "</html>\n"
+    )
+    soup = soup_cls(document, "html.parser")
+    return soup.prettify()
+
+
+def _convert_single(
+    md_path: Path,
+    context: _HtmlContext,
+    result: ConversionResult,
+) -> None:
+    """Convert a single Markdown file and record the outcome."""
+
+    destination = context.output_dir / f"{md_path.stem}.html"
+
+    try:
+        rendered = _render_document(
+            md_path,
+            context.css,
+            context.markdown_module,
+            context.soup_factory,
+        )
+    except (OSError, UnicodeDecodeError) as exc:
+        result.add_error(md_path, f"failed to read file: {exc}")
+        return
+    except (ValueError, AttributeError, TypeError) as exc:
+        result.add_error(md_path, f"failed to render HTML: {exc}")
+        return
+
+    try:
+        destination.write_text(rendered, encoding="utf-8")
+    except OSError as exc:
+        result.add_error(md_path, f"failed to write HTML: {exc}")
+        destination.unlink(missing_ok=True)
+        return
+
+    result.add_converted(md_path, destination)
+
 
 def convert_markdown_to_html(
     source_folder: str | Path,
@@ -58,7 +158,6 @@ def convert_markdown_to_html(
     theme: str = "default",
     extra_css: str | None = None,
     output_folder_name: str = "html",
-    patterns: Sequence[str] = DEFAULT_PATTERNS,
 ) -> ConversionResult:
     """Convert Markdown documents to HTML files."""
 
@@ -66,7 +165,7 @@ def convert_markdown_to_html(
     output_dir = ensure_directory(source / output_folder_name)
     result = ConversionResult(output_directory=output_dir)
 
-    markdown_files = find_source_files(source, patterns)
+    markdown_files = find_source_files(source, DEFAULT_PATTERNS)
     if not markdown_files:
         return result
 
@@ -74,44 +173,16 @@ def convert_markdown_to_html(
     if extra_css:
         css = f"{css}\n{extra_css}"
 
-    extensions = [
-        "fenced_code",
-        "tables",
-        "codehilite",
-        "toc",
-        "sane_lists",
-        "smarty",
-    ]
+    markdown_module, soup_factory = _load_dependencies()
+    context = _HtmlContext(
+        css=css,
+        markdown_module=markdown_module,
+        soup_factory=soup_factory,
+        output_dir=output_dir,
+    )
 
     for md_path in markdown_files:
-        destination = output_dir / f"{md_path.stem}.html"
-        try:
-            text = md_path.read_text(encoding="utf-8")
-            html = markdown.markdown(text, extensions=extensions)
-            document = f"""<!DOCTYPE html>
-<html lang=\"en\">
-<head>
-    <meta charset=\"utf-8\">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-    <title>{md_path.stem}</title>
-    <style>
-{css}
-    </style>
-</head>
-<body>
-{html}
-</body>
-</html>
-"""
-            soup = BeautifulSoup(document, "html.parser")
-            destination.write_text(soup.prettify(), encoding="utf-8")
-        except Exception as exc:
-            result.add_error(md_path, str(exc))
-            if destination.exists():
-                destination.unlink(missing_ok=True)
-            continue
-
-        result.add_converted(md_path, destination)
+        _convert_single(md_path, context, result)
 
     return result
 

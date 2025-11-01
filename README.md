@@ -52,11 +52,12 @@ counts of converted, skipped and failed files.
 
 ### Exposed converters
 
-| Name      | Description | Key options |
-|-----------|-------------|-------------|
+| Name       | Description | Key options |
+|------------|-------------|-------------|
 | `img2webp` | Convert bitmap images (PNG, JPG, GIF, BMP, TIFF, etc.) to WebP | `--quality`, `--lossless`, `--overwrite`, `--output-folder` |
 | `csv2json` | Transform CSV spreadsheets into JSON documents | `--encoding`, `--no-pretty`, `--output-folder` |
 | `md2html`  | Render Markdown documents as styled HTML pages | `--theme`, `--extra-css`, `--output-folder` |
+| `html2md`  | Convert HTML content into Markdown for further editing | `--heading-style`, `--bullets`, `--wrap-width`, `--output-folder` |
 | `text2pdf` | Typeset plain text files into PDF documents | `--font-name`, `--font-path`, `--font-size`, `--margin`, `--output-folder` |
 
 Refer to the [documentation](docs/index.md) for in-depth explanations and

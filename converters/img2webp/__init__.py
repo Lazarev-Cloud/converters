@@ -2,9 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Sequence
-
-from PIL import Image, ImageSequence
+from typing import Any, Sequence
 
 from ..utils import ConversionResult, ensure_directory, find_source_files, normalise_source
 
@@ -21,10 +19,33 @@ DEFAULT_PATTERNS: Sequence[str] = (
 )
 
 
-def _save_image(source: Path, destination: Path, quality: int, lossless: bool) -> None:
-    with Image.open(source) as image:
+def _load_pillow() -> tuple[Any, Any]:
+    """Import Pillow lazily to keep the dependency optional."""
+
+    try:
+        from PIL import Image, ImageSequence  # type: ignore import  # pylint: disable=import-outside-toplevel
+    except ImportError as exc:  # pragma: no cover - import failure is handled at runtime
+        raise RuntimeError(
+            "Pillow is required for img2webp. Install it with 'pip install pillow'."
+        ) from exc
+    return Image, ImageSequence
+
+
+def _save_image(
+    source: Path,
+    destination: Path,
+    quality: int,
+    lossless: bool,
+    pillow_modules: tuple[Any, Any],
+) -> None:
+    """Transcode ``source`` to WebP and write to ``destination``."""
+
+    image_cls, sequence_cls = pillow_modules
+
+    with image_cls.open(source) as image:  # type: ignore[call-arg,attr-defined]
         if source.suffix.lower() == ".gif" and getattr(image, "is_animated", False):
-            frames = [frame.copy() for frame in ImageSequence.Iterator(image)]
+            iterator = sequence_cls.Iterator(image)  # type: ignore[attr-defined]
+            frames = [frame.copy() for frame in iterator]
             frames[0].save(
                 destination,
                 format="WEBP",
@@ -53,7 +74,6 @@ def convert_images_to_webp(
     lossless: bool | None = None,
     skip_existing: bool = True,
     output_folder_name: str = "webp",
-    patterns: Sequence[str] = DEFAULT_PATTERNS,
 ) -> ConversionResult:
     """Convert images inside ``source_folder`` to WebP.
 
@@ -79,10 +99,12 @@ def convert_images_to_webp(
     output_dir = ensure_directory(source / output_folder_name)
     result = ConversionResult(output_directory=output_dir)
 
-    image_files = find_source_files(source, patterns)
+    image_files = find_source_files(source, DEFAULT_PATTERNS)
 
     if not image_files:
         return result
+
+    image_module, sequence_module = _load_pillow()
 
     for image_path in image_files:
         destination = output_dir / f"{image_path.stem}.webp"
@@ -94,9 +116,15 @@ def convert_images_to_webp(
             continue
 
         try:
-            _save_image(image_path, destination, quality=quality, lossless=lossless or False)
-        except Exception as exc:
-            result.add_error(image_path, str(exc))
+            _save_image(
+                image_path,
+                destination,
+                quality=quality,
+                lossless=lossless or False,
+                pillow_modules=(image_module, sequence_module),
+            )
+        except (OSError, ValueError, RuntimeError) as exc:
+            result.add_error(image_path, f"failed to convert image: {exc}")
             if destination.exists():
                 destination.unlink(missing_ok=True)
             continue

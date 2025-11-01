@@ -24,9 +24,10 @@ Flags:
 ## Python API
 
 ```python
-from converters import convert_text_to_pdf
+from converters import TextToPdfLayout, convert_text_to_pdf
 
-result = convert_text_to_pdf("notes", font_size=10, output_folder_name="exports/pdf")
+layout = TextToPdfLayout(font_name="Helvetica", font_size=10, margin=0.75)
+result = convert_text_to_pdf("notes", layout=layout, output_folder_name="exports/pdf")
 print(result.total_converted, "files written")
 ```
 
@@ -34,5 +35,5 @@ print(result.total_converted, "files written")
 
 - Custom fonts must be supplied as `.ttf` files and are registered on the fly.
 - Empty lines in the source text are preserved.
-- Set `patterns` to a tuple of glob patterns when you need to restrict the
-  converter to a specific subset of files.
+- Instantiate `TextToPdfLayout` when you need to customise fonts, margins or
+  the page size for your workflow.

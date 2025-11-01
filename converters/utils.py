@@ -29,24 +29,36 @@ class ConversionResult:
     output_directory: Path | None = None
 
     def add_converted(self, source: Path, destination: Path) -> None:
+        """Record a successful conversion from ``source`` to ``destination``."""
+
         self.converted.append((source, destination))
 
     def add_skipped(self, path: Path) -> None:
+        """Record that ``path`` was intentionally skipped."""
+
         self.skipped.append(path)
 
     def add_error(self, path: Path, message: str) -> None:
+        """Record an error ``message`` associated with ``path``."""
+
         self.errors.append((path, message))
 
     @property
     def total_converted(self) -> int:
+        """Return the number of successfully converted files."""
+
         return len(self.converted)
 
     @property
     def total_skipped(self) -> int:
+        """Return the number of skipped files."""
+
         return len(self.skipped)
 
     @property
     def total_errors(self) -> int:
+        """Return the number of files that triggered an error."""
+
         return len(self.errors)
 
     def as_dict(self) -> dict:
